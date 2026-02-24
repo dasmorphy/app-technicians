@@ -1,0 +1,1 @@
+export 'package:kontrol_app/presentation/views/layout_view.dart';
