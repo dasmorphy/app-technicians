@@ -5,6 +5,8 @@ import 'package:kontrol_app/config/utils/helper.dart';
 // import 'package:kontrol_app/domain/entities/user_session.dart';
 // import 'package:kontrol_app/presentation/providers/logbook/logbook_provider.dart';
 import 'package:kontrol_app/presentation/providers/providers.dart';
+import 'package:kontrol_app/presentation/views/form_step.dart';
+import 'package:kontrol_app/presentation/views/form_two_step.dart';
 import 'package:kontrol_app/presentation/views/views.dart';
 import 'package:kontrol_app/presentation/widgets/widgets.dart';
 import 'package:kontrol_app/service/pending_request_service.dart';
@@ -19,7 +21,7 @@ class LayoutScreen extends ConsumerStatefulWidget {
 }
 
 class _LayoutScreenState extends ConsumerState<LayoutScreen> {
-  final viewRoutes = const <Widget>[LayoutView(), Placeholder(), Placeholder()];
+  final viewRoutes = const <Widget>[LayoutView(), FormStepView(), FormTwoStepView()];
 
   @override
   void initState() {

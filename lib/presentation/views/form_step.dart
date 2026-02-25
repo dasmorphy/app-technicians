@@ -173,123 +173,202 @@ class _FormStepViewState extends State<FormStepView> {
 
 	@override
 	Widget build(BuildContext context) {
+		final stepTitles = ['Datos iniciales', 'Camioneta', 'Personal a bordo', 'Ruta'];
+		final stepSubtitles = ['Movimiento', 'Vehículo', 'Personal', 'Destino'];
+
 		return Center(
 			child: ConstrainedBox(
-				constraints: const BoxConstraints(maxWidth: 900),
+				constraints: const BoxConstraints(maxWidth: 600),
 				child: Card(
 					margin: const EdgeInsets.all(16),
+					elevation: 8,
+					shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
 					child: Padding(
-						padding: const EdgeInsets.all(16.0),
+						padding: const EdgeInsets.all(32.0),
 						child: Column(
 							mainAxisSize: MainAxisSize.min,
+							crossAxisAlignment: CrossAxisAlignment.center,
 							children: [
-								Text('Formulario Multi Step', style: Theme.of(context).textTheme.bodySmall),
-								const SizedBox(height: 12),
-								Expanded(
-									child: Stepper(
-										currentStep: _currentStep,
-										onStepContinue: _nextStep,
-										onStepCancel: _previousStep,
-										controlsBuilder: (context, details) {
-											final isLast = _currentStep == 3;
-											return Row(
-												children: [
-													ElevatedButton(
-														onPressed: details.onStepContinue,
-														child: Text(isLast ? 'Enviar' : 'Siguiente'),
-														style: ElevatedButton.styleFrom(minimumSize: const Size(120, 40)),
-													),
-													const SizedBox(width: 8),
-													if (_currentStep > 0)
-														TextButton(onPressed: details.onStepCancel, child: const Text('Atrás')),
-												],
-											);
-										},
-										steps: [
-											Step(
-												title: const Text('Datos iniciales'),
-												isActive: _currentStep >= 0,
-												state: _currentStep > 0 ? StepState.complete : StepState.indexed,
-												content: Form(
-													key: _formKeys[0],
-													child: InitialDataForm(
-														movementDateController: _movementDateController,
-														onPickDateTime: _pickDateTime,
-														motiveOptions: motiveOptions,
-														selectedMotives: selectedMotives,
-														onSelectMotives: (vals) => setState(() => selectedMotives = vals ?? []),
-														projectOptions: projectOptions,
-														selectedProjects: selectedProjects,
-														onSelectProjects: (vals) => setState(() => selectedProjects = vals ?? []),
-														projectOtherController: _projectOtherController,
-													),
-												),
-											),
-											Step(
-												title: const Text('Camioneta'),
-												isActive: _currentStep >= 1,
-												state: _currentStep > 1 ? StepState.complete : StepState.indexed,
-												content: Form(
-													key: _formKeys[1],
-													child: TruckDataForm(
-														plateOptions: plateOptions,
-														selectedPlate: selectedPlate,
-														onPlateChanged: (v) => setState(() => selectedPlate = v),
-														initialKmController: _initialKmController,
-														fuelOptions: fuelOptions,
-														selectedFuel: selectedFuel,
-														onFuelChanged: (v) => setState(() => selectedFuel = v),
-														onPickImages: _pickImages,
-														photos: photoFiles,
-													),
-												),
-											),
-											Step(
-												title: const Text('Personal a bordo'),
-												isActive: _currentStep >= 2,
-												state: _currentStep > 2 ? StepState.complete : StepState.indexed,
-												content: Form(
-													key: _formKeys[2],
-													child: PersonnelForm(
-														driverOptions: driverOptions,
-														selectedDriver: selectedDriver,
-														onDriverChanged: (v) => setState(() => selectedDriver = v),
-														passengerOptions: passengerOptions,
-														selectedPassengers: selectedPassengers,
-														onSelectPassengers: (vals) => setState(() => selectedPassengers = vals ?? []),
-													),
-												),
-											),
-											Step(
-												title: const Text('Ruta'),
-												isActive: _currentStep >= 3,
-												state: _currentStep == 3 ? StepState.editing : StepState.indexed,
-												content: Form(
-													key: _formKeys[3],
-													child: RouteForm(
-														originController: _originController,
-														destinationController: _destinationController,
-														observationsController: _observationsController,
-													),
-												),
-											),
-										],
+								// Title
+								Text(
+									stepTitles[_currentStep],
+									style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+									textAlign: TextAlign.center,
+								),
+								const SizedBox(height: 32),
+
+								// Step Indicator
+								_buildStepIndicator(stepSubtitles),
+								const SizedBox(height: 32),
+
+								// Form content
+								Flexible(
+									child: SingleChildScrollView(
+										child: _buildFormContent(),
 									),
 								),
-								const SizedBox(height: 8),
+								const SizedBox(height: 24),
+
+								// Buttons
 								Row(
-									mainAxisAlignment: MainAxisAlignment.end,
 									children: [
-										if (_currentStep == 3)
-											ElevatedButton(onPressed: _submit, child: const Text('Enviar formulario')),
+										if (_currentStep > 0)
+											Expanded(
+												child: OutlinedButton(
+													onPressed: _previousStep,
+													style: OutlinedButton.styleFrom(
+														padding: const EdgeInsets.symmetric(vertical: 12),
+														side: const BorderSide(color: Color(0xFFE74C3C)),
+													),
+													child: const Text(
+														'Atrás',
+														style: TextStyle(color: Color(0xFFE74C3C)),
+													),
+												),
+											),
+										if (_currentStep > 0) const SizedBox(width: 12),
+										Expanded(
+											child: ElevatedButton(
+												onPressed: _currentStep == 3 ? _submit : _nextStep,
+												style: ElevatedButton.styleFrom(
+													backgroundColor: const Color(0xFFE74C3C),
+													padding: const EdgeInsets.symmetric(vertical: 12),
+													shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+												),
+												child: Text(
+													_currentStep == 3 ? 'ENVIAR' : 'SIGUIENTE',
+													style: const TextStyle(
+														fontSize: 14,
+														fontWeight: FontWeight.bold,
+														color: Colors.white,
+													),
+												),
+											),
+										),
 									],
-								)
+								),
 							],
 						),
 					),
 				),
 			),
 		);
+	}
+
+	Widget _buildStepIndicator(List<String> subtitles) {
+		return Column(
+			children: [
+				Row(
+					mainAxisAlignment: MainAxisAlignment.center,
+					children: List.generate(4, (index) {
+						final isActive = index == _currentStep;
+						final isCompleted = index < _currentStep;
+						final color = isActive || isCompleted ? const Color(0xFFE74C3C) : Colors.grey[300];
+
+						return Expanded(
+							child: Row(
+								children: [
+									Expanded(
+										child: Column(
+											children: [
+												Container(
+													width: 50,
+													height: 50,
+													decoration: BoxDecoration(
+														shape: BoxShape.circle,
+														color: color,
+													),
+													child: Center(
+														child: Text(
+															'${index + 1}',
+															style: TextStyle(
+																color: Colors.white,
+																fontWeight: FontWeight.bold,
+																fontSize: 18,
+															),
+														),
+													),
+												),
+												const SizedBox(height: 8),
+												Text(
+													subtitles[index],
+													textAlign: TextAlign.center,
+													style: TextStyle(
+														fontSize: 12,
+														color: isActive || isCompleted ? const Color(0xFFE74C3C) : Colors.grey,
+														fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+													),
+												),
+											],
+										),
+									),
+									if (index < 3)
+										Container(
+											height: 2,
+											width: 30,
+											color: index < _currentStep ? const Color(0xFFE74C3C) : Colors.grey[300],
+										),
+								],
+							),
+						);
+					}),
+				),
+			],
+		);
+	}
+
+	Widget _buildFormContent() {
+		final forms = [
+			Form(
+				key: _formKeys[0],
+				child: InitialDataForm(
+					movementDateController: _movementDateController,
+					onPickDateTime: _pickDateTime,
+					motiveOptions: motiveOptions,
+					selectedMotives: selectedMotives,
+					onSelectMotives: (vals) => setState(() => selectedMotives = vals ?? []),
+					projectOptions: projectOptions,
+					selectedProjects: selectedProjects,
+					onSelectProjects: (vals) => setState(() => selectedProjects = vals ?? []),
+					projectOtherController: _projectOtherController,
+				),
+			),
+			Form(
+				key: _formKeys[1],
+				child: TruckDataForm(
+					plateOptions: plateOptions,
+					selectedPlate: selectedPlate,
+					onPlateChanged: (v) => setState(() => selectedPlate = v),
+					initialKmController: _initialKmController,
+					fuelOptions: fuelOptions,
+					selectedFuel: selectedFuel,
+					onFuelChanged: (v) => setState(() => selectedFuel = v),
+					onPickImages: _pickImages,
+					photos: photoFiles,
+				),
+			),
+			Form(
+				key: _formKeys[2],
+				child: PersonnelForm(
+					driverOptions: driverOptions,
+					selectedDriver: selectedDriver,
+					onDriverChanged: (v) => setState(() => selectedDriver = v),
+					passengerOptions: passengerOptions,
+					selectedPassengers: selectedPassengers,
+					onSelectPassengers: (vals) => setState(() => selectedPassengers = vals ?? []),
+				),
+			),
+			Form(
+				key: _formKeys[3],
+				child: RouteForm(
+					originController: _originController,
+					destinationController: _destinationController,
+					observationsController: _observationsController,
+				),
+			),
+		];
+
+		return forms[_currentStep];
 	}
 }
 
@@ -335,7 +414,7 @@ class InitialDataForm extends StatelessWidget {
 						Expanded(
 							child: ElevatedButton(
 								onPressed: () async {
-									final res = await (FormStepView.of(context)?._showMultiSelect('Motivo(s)', motiveOptions, selectedMotives));
+									final res = await (FormStepViewExtension.of(context)?._showMultiSelect('Motivo(s)', motiveOptions, selectedMotives));
 									if (res != null) onSelectMotives(res);
 								},
 								child: const Text('Seleccionar motivo(s)'),
@@ -351,7 +430,7 @@ class InitialDataForm extends StatelessWidget {
 						Expanded(
 							child: ElevatedButton(
 								onPressed: () async {
-									final res = await (FormStepView.of(context)?._showMultiSelect('Proyecto(s)', projectOptions, selectedProjects));
+									final res = await (FormStepViewExtension.of(context)?._showMultiSelect('Proyecto(s)', projectOptions, selectedProjects));
 									if (res != null) onSelectProjects(res);
 								},
 								child: const Text('Seleccionar proyecto/cliente'),
@@ -488,7 +567,7 @@ class PersonnelForm extends StatelessWidget {
 						Expanded(
 							child: ElevatedButton(
 								onPressed: () async {
-									final res = await (FormStepView.of(context)?._showMultiSelect('Personal acompañante', passengerOptions, selectedPassengers));
+									final res = await (FormStepViewExtension.of(context)?._showMultiSelect('Personal acompañante', passengerOptions, selectedPassengers));
 									if (res != null) onSelectPassengers(res);
 								},
 								child: const Text('Seleccionar personal acompañante'),
