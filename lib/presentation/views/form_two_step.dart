@@ -1,10 +1,10 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:kontrol_app/presentation/widgets/shared/show_dialog_widget.dart';
+import 'package:kontrol_app/service/movement_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -47,8 +47,6 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 	List<String> fuelOptions = ['0%', '25%', '50%', '75%', '100%'];
 	String? selectedFuel;
 	List<File?> photoFiles = [];
-  final ImagePicker _imagePicker = ImagePicker();
-
 
 	// Personnel
 	List<String> driverOptions = ['Juan', 'María', 'Carlos'];
@@ -62,6 +60,10 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 	final TextEditingController _observationsController = TextEditingController();
 
 	final _formKeys = List.generate(4, (_) => GlobalKey<FormState>());
+	
+	// Services
+	final _movementService = MovementService();
+	bool _isLoading = false;
 
 	@override
 	void dispose() {
@@ -104,73 +106,6 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 		});
 	}
 
-
-  Future<void> _captureImageFromCamera() async {
-
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-      );
-
-      if (image != null && mounted) {
-        // Agregar placeholder nulo para mostrar progreso en la UI
-        setState(() {
-          photoFiles.add(null);
-        });
-
-        final placeholderIndex = photoFiles.length - 1;
-
-        final originalFile = File(image.path);
-
-        // Convertir a WebP
-        final webpFile = await convertToWebP(originalFile);
-
-        if (webpFile == null) {
-          if (mounted) {
-            // Remover placeholder
-            setState(() {
-              if (placeholderIndex < photoFiles.length &&
-                  photoFiles[placeholderIndex] == null) {
-                photoFiles.removeAt(placeholderIndex);
-              }
-            });
-
-            showDialog(
-              context: context,
-              builder: (_) =>
-                  ShowDialogWidget(title: 'Error al convertir imagen'),
-            );
-          }
-          return;
-        }
-
-        final bytes = await webpFile.length();
-        final mb = bytes / 1024 / 1024;
-
-        print("Peso después de WebP: ${mb.toStringAsFixed(2)} MB");
-
-        if (mounted) {
-          setState(() {
-            photoFiles[placeholderIndex] = webpFile;
-          });
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        // Remover último placeholder si existe
-        if (photoFiles.isNotEmpty && photoFiles.last == null) {
-          setState(() => photoFiles.removeLast());
-        }
-        showDialog(
-          context: context,
-          builder: (_) => ShowDialogWidget(
-            title: 'Error al capturar imagen',
-            content: '$e',
-          ),
-        );
-      }
-    }
-  }
 
 	Future<List<String>?> _showMultiSelect(String title, List<String> options, List<String> initial) async {
 		final selected = List<String>.from(initial);
@@ -344,30 +279,147 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
     });
   }
 
-	void _submit() {
+	Future<void> _submit() async {
 		// Validate last form
 		final form = _formKeys[_currentStep].currentState;
 		if (form != null && !form.validate()) return;
 
-		final collected = {
-			'movementDateTime': movementDateTime?.toIso8601String(),
-			'motives': selectedMotives,
-			'projects': selectedProjects,
-			'projectOther': _projectOtherController.text,
-			'plate': selectedPlate,
-			'initialKm': _initialKmController.text,
-			'fuel': selectedFuel,
-			'photosCount': photoFiles.length,
-			'driver': selectedDriver,
-			'passengers': selectedPassengers,
-			'origin': _originController.text,
-			'destination': _destinationController.text,
-			'observations': _observationsController.text,
-		};
+		// Validar que todos los campos requeridos estén completos
+		if (movementDateTime == null) {
+			_showErrorSnackBar('Por favor selecciona fecha y hora');
+			return;
+		}
+		if (selectedMotives.isEmpty) {
+			_showErrorSnackBar('Por favor selecciona al menos un motivo');
+			return;
+		}
+		if (selectedPlate == null) {
+			_showErrorSnackBar('Por favor selecciona una placa');
+			return;
+		}
+		if (selectedDriver == null) {
+			_showErrorSnackBar('Por favor selecciona un conductor');
+			return;
+		}
 
-		debugPrint('Form submitted: $collected');
+		setState(() => _isLoading = true);
 
-		ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Formulario enviado (ver consola)')));
+		try {
+			// Convertir archivos null a File
+			final List<File> validPhotos = photoFiles
+				.where((photo) => photo != null)
+				.map((photo) => photo!)
+				.toList();
+
+			// Crear la solicitud
+			final request = MovementRequest(
+				movementDateTime: movementDateTime!,
+				motives: selectedMotives,
+				projects: selectedProjects,
+				projectOther: _projectOtherController.text.isEmpty ? null : _projectOtherController.text,
+				plate: selectedPlate!,
+				initialKm: _initialKmController.text,
+				fuel: selectedFuel ?? '',
+				driver: selectedDriver!,
+				passengers: selectedPassengers,
+				origin: _originController.text,
+				destination: _destinationController.text,
+				observations: _observationsController.text.isEmpty ? null : _observationsController.text,
+				photos: validPhotos,
+			);
+
+			// Enviar al servidor
+			await _movementService.submitMovement(request);
+
+			if (mounted) {
+				_showSuccessSnackBar('¡Movimiento registrado exitosamente!');
+				
+				// Limpiar el formulario después de 2 segundos
+				await Future.delayed(const Duration(seconds: 2));
+				
+				if (mounted) {
+					_resetForm();
+				}
+			}
+		} on DioException catch (e) {
+			if (mounted) {
+				String errorMessage = 'Error al enviar el movimiento';
+				if (e.response?.statusCode == 400) {
+					errorMessage = 'Datos inválidos: ${e.response?.data['message'] ?? ''}';
+				} else if (e.response?.statusCode == 409) {
+					errorMessage = 'El movimiento ya existe';
+				} else if (e.response?.statusCode == 500) {
+					errorMessage = 'Error en el servidor';
+				} else if (e.type == DioExceptionType.connectionTimeout) {
+					errorMessage = 'Tiempo de conexión agotado';
+				} else if (e.type == DioExceptionType.connectionError) {
+					errorMessage = 'Error de conexión. Verifica tu conexión a internet';
+				}
+				_showErrorSnackBar(errorMessage);
+			}
+		} catch (e) {
+			if (mounted) {
+				_showErrorSnackBar('Error inesperado: $e');
+			}
+		} finally {
+			if (mounted) {
+				setState(() => _isLoading = false);
+			}
+		}
+	}
+
+	void _resetForm() {
+		setState(() {
+			_currentStep = 0;
+			movementDateTime = null;
+			_movementDateController.clear();
+			selectedMotives.clear();
+			selectedProjects.clear();
+			_projectOtherController.clear();
+			selectedPlate = null;
+			_initialKmController.clear();
+			selectedFuel = null;
+			photoFiles.clear();
+			selectedDriver = null;
+			selectedPassengers.clear();
+			_originController.clear();
+			_destinationController.clear();
+			_observationsController.clear();
+		});
+	}
+
+	void _showSuccessSnackBar(String message) {
+		ScaffoldMessenger.of(context).showSnackBar(
+			SnackBar(
+				content: Row(
+					children: [
+						const Icon(Icons.check_circle, color: Colors.white),
+						const SizedBox(width: 12),
+						Expanded(child: Text(message)),
+					],
+				),
+				backgroundColor: Colors.green[700],
+				behavior: SnackBarBehavior.floating,
+				margin: const EdgeInsets.all(16),
+			),
+		);
+	}
+
+	void _showErrorSnackBar(String message) {
+		ScaffoldMessenger.of(context).showSnackBar(
+			SnackBar(
+				content: Row(
+					children: [
+						const Icon(Icons.error_outline, color: Colors.white),
+						const SizedBox(width: 12),
+						Expanded(child: Text(message)),
+					],
+				),
+				backgroundColor: Colors.red[700],
+				behavior: SnackBarBehavior.floating,
+				margin: const EdgeInsets.all(16),
+			),
+		);
 	}
 
 	@override
@@ -418,20 +470,45 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 										width: double.infinity,
 										height: 48,
 										child: ElevatedButton(
-											onPressed: _currentStep == 3 ? _submit : _nextStep,
+											onPressed: _isLoading ? null : (_currentStep == 3 ? _submit : _nextStep),
 											style: ElevatedButton.styleFrom(
 												backgroundColor: const Color.fromARGB(255, 4, 98, 246),
 												shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+												disabledBackgroundColor: Colors.grey[300],
 											),
-											child: Text(
-												_currentStep == 3 ? 'ENVIAR' : 'SIGUIENTE',
-												style: const TextStyle(
-													fontSize: 16,
-													fontWeight: FontWeight.bold,
-													color: Colors.white,
-													letterSpacing: 0.5,
+											child: _isLoading
+												? Row(
+													mainAxisAlignment: MainAxisAlignment.center,
+													children: [
+														const SizedBox(
+															width: 20,
+															height: 20,
+															child: CircularProgressIndicator(
+																strokeWidth: 2,
+																valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+															),
+														),
+														const SizedBox(width: 12),
+														const Text(
+															'Enviando...',
+															style: TextStyle(
+																fontSize: 16,
+																fontWeight: FontWeight.bold,
+																color: Colors.white,
+																letterSpacing: 0.5,
+															),
+														),
+													],
+												)
+												: Text(
+													_currentStep == 3 ? 'ENVIAR' : 'SIGUIENTE',
+													style: const TextStyle(
+														fontSize: 16,
+														fontWeight: FontWeight.bold,
+														color: Colors.white,
+														letterSpacing: 0.5,
+													),
 												),
-											),
 										),
 									),
 									if (_currentStep > 0) ...[
