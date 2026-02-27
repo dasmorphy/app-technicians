@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:kontrol_app/presentation/widgets/inputs/glow_text_form_field.dart';
 
 class TruckDataFormWidget extends StatelessWidget {
-	final List<String> plateOptions;
-	final String? selectedPlate;
-	final ValueChanged<String?> onPlateChanged;
+	final List<dynamic> plateOptions;
+	final int? selectedPlate;
+	final ValueChanged<int?> onPlateChanged;
 	final TextEditingController initialKmController;
-	final List<String> fuelOptions;
-	final String? selectedFuel;
-	final ValueChanged<String?> onFuelChanged;
+	final List<dynamic> fuelOptions;
+	final int? selectedFuel;
+	final ValueChanged<int?> onFuelChanged;
 	final VoidCallback onPickImages;
 	final List<File?> selectedImages;
 	final Function(int) onRemoveImage;
@@ -22,7 +22,7 @@ class TruckDataFormWidget extends StatelessWidget {
 		required this.onPlateChanged,
 		required this.initialKmController,
 		required this.fuelOptions,
-		this.selectedFuel = '0',
+		required this.selectedFuel,
 		required this.onFuelChanged,
 		required this.onPickImages,
 		required this.selectedImages,
@@ -33,16 +33,27 @@ class TruckDataFormWidget extends StatelessWidget {
 	Widget build(BuildContext context) {
 		return Column(
 			children: [
-				// Placa
-				DropdownButtonFormField<String>(
-					value: selectedPlate,
-					items: plateOptions.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
-					onChanged: onPlateChanged,
+        GlowDropdownFormField<int>(
+					value: selectedPlate ?? 0,
 					decoration: InputDecoration(
 						labelText: 'Placa',
 						border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
 						contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
 					),
+					items: [
+						const DropdownMenuItem<int>(
+							value: 0,
+							enabled: false,
+							child: Text('Seleccione una opción'),
+						),
+						...plateOptions.map(
+							(license) => DropdownMenuItem<int>(
+								value: license['id_license'],          // 👈 se guarda el id
+                child: Text(license['name']),
+							),
+						)
+					],
+					onChanged: onPlateChanged,
 					validator: (v) => v == null ? 'Selecciona placa' : null,
 				),
 				const SizedBox(height: 16),
@@ -61,23 +72,23 @@ class TruckDataFormWidget extends StatelessWidget {
 				const SizedBox(height: 16),
 
 				// Nivel combustible
-				GlowDropdownFormField<String>(
-					value: selectedFuel ?? '0%',
+				GlowDropdownFormField<int>(
+					value: selectedFuel ?? 0,
 					decoration: InputDecoration(
 						labelText: 'Nivel combustible salida',
 						border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
 						contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
 					),
 					items: [
-						const DropdownMenuItem<String>(
-							value: null,
+						const DropdownMenuItem<int>(
+							value: 0,
 							enabled: false,
 							child: Text('Seleccione una opción'),
 						),
 						...fuelOptions.map(
-							(f) => DropdownMenuItem<String>(
-								value: f,
-								child: Text(f),
+							(levelGasoline) => DropdownMenuItem<int>(
+								value: levelGasoline['id_level'],          // 👈 se guarda el id
+                child: Text(levelGasoline['name']),
 							),
 						)
 					],

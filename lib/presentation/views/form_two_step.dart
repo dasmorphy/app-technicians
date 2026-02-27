@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:kontrol_app/presentation/models/technical_request.dart';
 import 'package:kontrol_app/service/catalogs_service.dart';
 import 'package:kontrol_app/service/movement_service.dart';
 import 'package:path/path.dart' as p;
@@ -29,30 +30,28 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 	DateTime? movementDateTime;
 	final TextEditingController _movementDateController = TextEditingController();
 
-	List<String> motiveOptions = [
-		'Inspección',
-		'Entrega',
-		'Recolección',
-		'Otro',
-	];
-	List<String> selectedMotives = [];
+  List<dynamic> motiveOptions = [];
+	List<int> selectedMotivesIds = [];
+	List<String> selectedMotivesNames = [];
 
 	List<String> projectOptions = ['Cliente A', 'Cliente B', 'Otro'];
 	List<String> selectedProjects = [];
 	final TextEditingController _projectOtherController = TextEditingController();
 
 	// Truck data
-	List<String> plateOptions = ['ABC-123', 'CDE-456', 'FGH-789'];
-	String? selectedPlate;
+  List<dynamic> plateOptions = [];
+	int? selectedPlate;
 	final TextEditingController _initialKmController = TextEditingController();
-	List<String> fuelOptions = ['0%', '25%', '50%', '75%', '100%'];
-	String? selectedFuel;
+	List<dynamic> fuelOptions = [];
+	int? selectedFuel;
 	List<File?> photoFiles = [];
 
 	// Personnel
 	int? selectedDriver;
-	List<String> passengerOptions = ['Acompañante 1', 'Acompañante 2'];
-	List<String> selectedPassengers = [];
+	List<dynamic> passengerOptions = [];
+	List<int> selectedPassengers = [];
+  List<int> selectedCopilotIds = [];
+	List<String> selectedCopilotNames = [];
 
 	// Route
 	final TextEditingController _originController = TextEditingController();
@@ -72,6 +71,10 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
   void initState() {
     super.initState();
     _loadDrivers();
+    _loadLicenses();
+    _loadLevelGasoline();
+    _loadReasons();
+    _loadCopilot();
   }
 
   Future<void> _loadDrivers() async {
@@ -82,6 +85,50 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
       });
     } catch (e) {
       debugPrint('Error cargando conductores: $e');
+    }
+  }
+
+  Future<void> _loadLicenses() async {
+    try {
+      final list = await service.getLicensesVehicles();
+      setState(() {
+        plateOptions = list;
+      });
+    } catch (e) {
+      debugPrint('Error cargando placas de vehículos: $e');
+    }
+  }
+
+  Future<void> _loadLevelGasoline() async {
+    try {
+      final list = await service.getLevelGasoline();
+      setState(() {
+        fuelOptions = list;
+      });
+    } catch (e) {
+      debugPrint('Error al cargar niveles de gasolina: $e');
+    }
+  }
+
+  Future<void> _loadCopilot() async {
+    try {
+      final list = await service.getCopilot();
+      setState(() {
+        passengerOptions = list;
+      });
+    } catch (e) {
+      debugPrint('Error al cargar niveles de gasolina: $e');
+    }
+  }
+
+  Future<void> _loadReasons() async {
+    try {
+      final list = await service.getAllReasons();
+      setState(() {
+        motiveOptions = list;
+      });
+    } catch (e) {
+      debugPrint('Error al cargar los motivos: $e');
     }
   }
 
@@ -126,10 +173,9 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 		});
 	}
 
-
-	Future<List<String>?> _showMultiSelect(String title, List<String> options, List<String> initial) async {
-		final selected = List<String>.from(initial);
-		final res = await showDialog<List<String>>(
+	Future<List<int>?> _showMultiSelect(String title, List<dynamic> options, List<int> initial) async {
+		final selected = List<int>.from(initial);
+		final res = await showDialog<List<int>>(
 			context: context,
 			builder: (context) {
 				return StatefulBuilder(
@@ -143,22 +189,25 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 									itemCount: options.length,
 									itemBuilder: (context, index) {
 										final opt = options[index];
-										final checked = selected.contains(opt);
+                    final id = opt['id_reason'] ?? opt['id_copilot'];
+                    final name = opt['name'];
+										final checked = selected.contains(id);
+
 										return CheckboxListTile(
-											value: checked,
-											title: Text(opt),
-											onChanged: (v) {
-												setStateDialog(() {
-													if (v == true) {
-														if (!selected.contains(opt)) {
-															selected.add(opt);
-														}
-													} else {
-														selected.remove(opt);
-													}
-												});
-											},
-										);
+                      value: checked,
+                      title: Text(name),
+                      onChanged: (v) {
+                        setStateDialog(() {
+                          if (v == true) {
+                            if (!selected.contains(id)) {
+                              selected.add(id);
+                            }
+                          } else {
+                            selected.remove(id);
+                          }
+                        });
+                      },
+                    );
 									},
 								),
 							),
@@ -184,6 +233,48 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 
 	void _previousStep() {
 		if (_currentStep > 0) setState(() => _currentStep -= 1);
+	}
+
+	void _handleSelectMotives(List<int>? selectedIds) {
+		if (selectedIds == null || selectedIds.isEmpty) {
+			setState(() {
+				selectedMotivesIds.clear();
+				selectedMotivesNames.clear();
+			});
+			return;
+		}
+
+		// Convertir IDs a nombres buscándolos en motiveOptions
+		final names = motiveOptions
+			.where((m) => selectedIds.contains(m['id_reason']))
+			.map<String>((m) => m['name'] as String)
+			.toList();
+
+		setState(() {
+			selectedMotivesIds = selectedIds;
+			selectedMotivesNames = names;
+		});
+	}
+
+  void _handleSelectCopilot(List<int>? selectedIds) {
+		if (selectedIds == null || selectedIds.isEmpty) {
+			setState(() {
+				selectedCopilotIds.clear();
+				selectedCopilotNames.clear();
+			});
+			return;
+		}
+
+		// Convertir IDs a nombres buscándolos en motiveOptions
+		final names = passengerOptions
+			.where((m) => selectedIds.contains(m['id_copilot']))
+			.map<String>((m) => m['name'] as String)
+			.toList();
+
+		setState(() {
+			selectedCopilotIds = selectedIds;
+			selectedCopilotNames = names;
+		});
 	}
 
   // Future<void> _captureImageFromCamera() async {
@@ -309,7 +400,7 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 			_showErrorSnackBar('Por favor selecciona fecha y hora');
 			return;
 		}
-		if (selectedMotives.isEmpty) {
+		if (selectedMotivesIds.isEmpty) {
 			_showErrorSnackBar('Por favor selecciona al menos un motivo');
 			return;
 		}
@@ -332,14 +423,14 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 				.toList();
 
 			// Crear la solicitud
-			final request = MovementRequest(
+			final request = TechnicalRequest(
 				movementDateTime: movementDateTime!,
-				motives: selectedMotives,
+				motives: selectedMotivesIds,
 				projects: selectedProjects,
 				projectOther: _projectOtherController.text.isEmpty ? null : _projectOtherController.text,
 				plate: selectedPlate!,
 				initialKm: _initialKmController.text,
-				fuel: selectedFuel ?? '',
+				fuel: selectedFuel!,
 				driver: selectedDriver!,
 				passengers: selectedPassengers,
 				origin: _originController.text,
@@ -393,7 +484,8 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 			_currentStep = 0;
 			movementDateTime = null;
 			_movementDateController.clear();
-			selectedMotives.clear();
+			selectedMotivesIds.clear();
+			selectedMotivesNames.clear();
 			selectedProjects.clear();
 			_projectOtherController.clear();
 			selectedPlate = null;
@@ -632,8 +724,9 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 					movementDateController: _movementDateController,
 					onPickDateTime: _pickDateTime,
 					motiveOptions: motiveOptions,
-					selectedMotives: selectedMotives,
-					onSelectMotives: (vals) => setState(() => selectedMotives = vals ?? []),
+					selectedMotives: selectedMotivesIds,
+					selectedMotivesNames: selectedMotivesNames,
+					onSelectMotives: _handleSelectMotives,
 					projectOptions: projectOptions,
 					selectedProjects: selectedProjects,
 					onSelectProjects: (vals) => setState(() => selectedProjects = vals ?? []),
@@ -663,8 +756,9 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 					selectedDriver: selectedDriver,
 					onDriverChanged: (v) => setState(() => selectedDriver = v),
 					passengerOptions: passengerOptions,
-					selectedPassengers: selectedPassengers,
-					onSelectPassengers: (vals) => setState(() => selectedPassengers = vals ?? []),
+					selectedPassengers: selectedCopilotIds,
+          selectedCopilotNames: selectedCopilotNames,
+					onSelectPassengers: _handleSelectCopilot,
 					onShowMultiSelect: _showMultiSelect,
 				),
 			),
