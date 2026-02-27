@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:kontrol_app/service/catalogs_service.dart';
 import 'package:kontrol_app/service/movement_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -49,8 +50,7 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 	List<File?> photoFiles = [];
 
 	// Personnel
-	List<String> driverOptions = ['Juan', 'María', 'Carlos'];
-	String? selectedDriver;
+	int? selectedDriver;
 	List<String> passengerOptions = ['Acompañante 1', 'Acompañante 2'];
 	List<String> selectedPassengers = [];
 
@@ -64,6 +64,26 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 	// Services
 	final _movementService = MovementService();
 	bool _isLoading = false;
+
+  final CatalogsService service = CatalogsService();
+  List<dynamic> driverOptions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDrivers();
+  }
+
+  Future<void> _loadDrivers() async {
+    try {
+      final list = await service.getDriversVehicles();
+      setState(() {
+        driverOptions = list;
+      });
+    } catch (e) {
+      debugPrint('Error cargando conductores: $e');
+    }
+  }
 
 	@override
 	void dispose() {

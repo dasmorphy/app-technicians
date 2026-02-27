@@ -17,7 +17,7 @@ class MovementRequest {
   final String plate;
   final String initialKm;
   final String fuel;
-  final String driver;
+  final int driver;
   final List<String> passengers;
   final String origin;
   final String destination;
@@ -54,7 +54,7 @@ class MovementRequest {
       'plate': plate,
       'initialKm': initialKm,
       'fuel': fuel,
-      'driver': driver,
+      'id_driver': driver,
       'passengers': passengers,
       'origin': origin,
       'destination': destination,

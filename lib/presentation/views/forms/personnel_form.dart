@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class PersonnelFormWidget extends StatelessWidget {
-	final List<String> driverOptions;
-	final String? selectedDriver;
-	final ValueChanged<String?> onDriverChanged;
+	final List<dynamic> driverOptions; // lista de objetos del API
+  final int? selectedDriver;         // id seleccionado
+  final ValueChanged<int?> onDriverChanged;
 	final List<String> passengerOptions;
 	final List<String> selectedPassengers;
 	final ValueChanged<List<String>?> onSelectPassengers;
@@ -25,9 +25,14 @@ class PersonnelFormWidget extends StatelessWidget {
 		return Column(
 			children: [
 				// Conductor
-				DropdownButtonFormField<String>(
-					value: selectedDriver,
-					items: driverOptions.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+				DropdownButtonFormField<int>(
+					initialValue: selectedDriver,
+					items: driverOptions.map<DropdownMenuItem<int>>((driver) {
+            return DropdownMenuItem<int>(
+              value: driver['id'],          // 👈 se guarda el id
+              child: Text(driver['name']),  // 👈 se muestra el nombre
+            );
+          }).toList(),
 					onChanged: onDriverChanged,
 					decoration: InputDecoration(
 						labelText: 'Conductor',

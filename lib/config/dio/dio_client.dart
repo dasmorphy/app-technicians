@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:kontrol_app/config/constants/api_constants.dart';
 import 'package:kontrol_app/config/constants/environments.dart';
+import 'package:uuid/uuid.dart';
 
 /// Cliente HTTP configurado con Dio
 class DioClient {
@@ -22,6 +23,14 @@ class DioClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
+          // 👇 SOLO para GET
+          if (options.method == 'GET') {
+            options.headers.addAll({
+              'externalTransactionId': Uuid().v4(),
+              'channel': 'TECHNICAL_MOVIL',
+            });
+          }
+
           print('📤 REQUEST: ${options.method} ${options.path}');
           return handler.next(options);
         },
