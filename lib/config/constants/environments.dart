@@ -8,5 +8,6 @@ class Environments {
   static String getAllLevelGasoline = dotenv.env['API_GET_ALL_GASOLINE'] ?? 'No hay api key';
   static String getAllReasons = dotenv.env['API_GET_ALL_REASONS'] ?? 'No hay api key';
   static String getAllCopilots = dotenv.env['API_GET_ALL_COPILOTS'] ?? 'No hay api key';
+  static String getAllProjects = dotenv.env['API_GET_ALL_PROJECTS'] ?? 'No hay api key';
 
 }

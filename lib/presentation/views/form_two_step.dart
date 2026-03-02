@@ -4,7 +4,9 @@ import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kontrol_app/presentation/models/technical_request.dart';
+import 'package:kontrol_app/presentation/providers/technical-kontrol/technical_repository_provider.dart';
 import 'package:kontrol_app/service/catalogs_service.dart';
 import 'package:kontrol_app/service/movement_service.dart';
 import 'package:path/path.dart' as p;
@@ -16,14 +18,14 @@ import 'forms/personnel_form.dart';
 import 'forms/route_form.dart';
 
 
-class FormTwoStepView extends StatefulWidget {
+class FormTwoStepView extends ConsumerStatefulWidget {
 	const FormTwoStepView({super.key});
 
 	@override
-	State<FormTwoStepView> createState() => _FormTwoStepViewState();
+	ConsumerState<FormTwoStepView> createState() => _FormTwoStepViewState();
 }
 
-class _FormTwoStepViewState extends State<FormTwoStepView> {
+class _FormTwoStepViewState extends ConsumerState<FormTwoStepView> {
 	int _currentStep = 0;
 
 	// Controllers / state for all fields
@@ -34,8 +36,9 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 	List<int> selectedMotivesIds = [];
 	List<String> selectedMotivesNames = [];
 
-	List<String> projectOptions = ['Cliente A', 'Cliente B', 'Otro'];
-	List<String> selectedProjects = [];
+	List<dynamic> projectOptions = [];
+  List<int> selectedProjectsIds = [];
+	List<String> selectedProjectsNames = [];
 	final TextEditingController _projectOtherController = TextEditingController();
 
 	// Truck data
@@ -49,7 +52,6 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 	// Personnel
 	int? selectedDriver;
 	List<dynamic> passengerOptions = [];
-	List<int> selectedPassengers = [];
   List<int> selectedCopilotIds = [];
 	List<String> selectedCopilotNames = [];
 
@@ -60,26 +62,32 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 
 	final _formKeys = List.generate(4, (_) => GlobalKey<FormState>());
 	
-	// Services
-	final _movementService = MovementService();
 	bool _isLoading = false;
 
-  final CatalogsService service = CatalogsService();
   List<dynamic> driverOptions = [];
 
   @override
   void initState() {
     super.initState();
-    _loadDrivers();
-    _loadLicenses();
-    _loadLevelGasoline();
-    _loadReasons();
-    _loadCopilot();
+
+    // ⚠️ En Riverpod las llamadas async se hacen en microtask
+    Future.microtask(() {
+      _loadDrivers();
+      _loadProjects();
+      _loadLicenses();
+      _loadLevelGasoline();
+      _loadReasons();
+      _loadCopilot();
+    });
   }
 
   Future<void> _loadDrivers() async {
     try {
-      final list = await service.getDriversVehicles();
+      final repo = ref.read(technicalRepositoryProvider);
+      final list = await repo.getDriversVehicles();
+
+      if (!mounted) return;
+
       setState(() {
         driverOptions = list;
       });
@@ -88,9 +96,25 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
     }
   }
 
+  Future<void> _loadProjects() async {
+    try {
+      final repo = ref.read(technicalRepositoryProvider);
+      final list = await repo.getProjects();
+
+      if (!mounted) return;
+
+      setState(() {
+        projectOptions = list;
+      });
+    } catch (e) {
+      debugPrint('Error cargando proyectos: $e');
+    }
+  }
+
   Future<void> _loadLicenses() async {
     try {
-      final list = await service.getLicensesVehicles();
+      final repo = ref.read(technicalRepositoryProvider);
+      final list = await repo.getLicensesVehicles();
       setState(() {
         plateOptions = list;
       });
@@ -101,7 +125,8 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 
   Future<void> _loadLevelGasoline() async {
     try {
-      final list = await service.getLevelGasoline();
+      final repo = ref.read(technicalRepositoryProvider);
+      final list = await repo.getLevelGasoline();
       setState(() {
         fuelOptions = list;
       });
@@ -112,7 +137,8 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 
   Future<void> _loadCopilot() async {
     try {
-      final list = await service.getCopilot();
+      final repo = ref.read(technicalRepositoryProvider);
+      final list = await repo.getCopilot();
       setState(() {
         passengerOptions = list;
       });
@@ -123,7 +149,8 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 
   Future<void> _loadReasons() async {
     try {
-      final list = await service.getAllReasons();
+      final repo = ref.read(technicalRepositoryProvider);
+      final list = await repo.getAllReasons();
       setState(() {
         motiveOptions = list;
       });
@@ -189,7 +216,7 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 									itemCount: options.length,
 									itemBuilder: (context, index) {
 										final opt = options[index];
-                    final id = opt['id_reason'] ?? opt['id_copilot'];
+                    final id = opt['id_reason'] ?? opt['id_copilot'] ?? opt['id_client_projects'];
                     final name = opt['name'];
 										final checked = selected.contains(id);
 
@@ -274,6 +301,27 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 		setState(() {
 			selectedCopilotIds = selectedIds;
 			selectedCopilotNames = names;
+		});
+	}
+
+  void _handleSelectProjects(List<int>? selectedIds) {
+		if (selectedIds == null || selectedIds.isEmpty) {
+			setState(() {
+				selectedProjectsIds.clear();
+				selectedProjectsNames.clear();
+			});
+			return;
+		}
+
+		// Convertir IDs a nombres buscándolos en motiveOptions
+		final names = projectOptions
+			.where((m) => selectedIds.contains(m['id_client_projects']))
+			.map<String>((m) => m['name'] as String)
+			.toList();
+
+		setState(() {
+			selectedProjectsIds = selectedIds;
+			selectedProjectsNames = names;
 		});
 	}
 
@@ -416,6 +464,8 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 		setState(() => _isLoading = true);
 
 		try {
+      final repo = ref.read(technicalRepositoryProvider);
+
 			// Convertir archivos null a File
 			final List<File> validPhotos = photoFiles
 				.where((photo) => photo != null)
@@ -426,13 +476,13 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 			final request = TechnicalRequest(
 				movementDateTime: movementDateTime!,
 				motives: selectedMotivesIds,
-				projects: selectedProjects,
+				projects: selectedProjectsIds,
 				projectOther: _projectOtherController.text.isEmpty ? null : _projectOtherController.text,
 				plate: selectedPlate!,
 				initialKm: _initialKmController.text,
 				fuel: selectedFuel!,
 				driver: selectedDriver!,
-				passengers: selectedPassengers,
+				passengers: selectedCopilotIds,
 				origin: _originController.text,
 				destination: _destinationController.text,
 				observations: _observationsController.text.isEmpty ? null : _observationsController.text,
@@ -440,7 +490,7 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 			);
 
 			// Enviar al servidor
-			await _movementService.submitMovement(request);
+			await repo.submitMovement(request);
 
 			if (mounted) {
 				_showSuccessSnackBar('¡Movimiento registrado exitosamente!');
@@ -486,14 +536,18 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 			_movementDateController.clear();
 			selectedMotivesIds.clear();
 			selectedMotivesNames.clear();
-			selectedProjects.clear();
+			selectedProjectsIds.clear();
+			selectedProjectsNames.clear();
+      selectedMotivesIds.clear();
+      selectedMotivesNames.clear();
 			_projectOtherController.clear();
 			selectedPlate = null;
 			_initialKmController.clear();
 			selectedFuel = null;
 			photoFiles.clear();
 			selectedDriver = null;
-			selectedPassengers.clear();
+			selectedCopilotIds.clear();
+      selectedCopilotNames.clear();
 			_originController.clear();
 			_destinationController.clear();
 			_observationsController.clear();
@@ -728,8 +782,9 @@ class _FormTwoStepViewState extends State<FormTwoStepView> {
 					selectedMotivesNames: selectedMotivesNames,
 					onSelectMotives: _handleSelectMotives,
 					projectOptions: projectOptions,
-					selectedProjects: selectedProjects,
-					onSelectProjects: (vals) => setState(() => selectedProjects = vals ?? []),
+					selectedProjects: selectedProjectsIds,
+					selectedProjectsNames: selectedProjectsNames,
+					onSelectProjects: _handleSelectProjects,
 					projectOtherController: _projectOtherController,
 					onShowMultiSelect: _showMultiSelect,
 				),

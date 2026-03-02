@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kontrol_app/config/utils/helper.dart';
 import 'package:kontrol_app/presentation/providers/providers.dart';
+import 'package:kontrol_app/presentation/providers/technical-kontrol/history_technical_provider.dart';
 import 'package:kontrol_app/presentation/widgets/header/home_header.dart';
+import 'package:kontrol_app/presentation/widgets/modals/animated_modal.dart';
+import 'package:kontrol_app/presentation/widgets/modals/bitacora_detail_modal.dart';
 import 'package:kontrol_app/presentation/widgets/widgets.dart';
 
 class LayoutView extends ConsumerStatefulWidget {
@@ -82,7 +85,7 @@ class LayoutViewState extends ConsumerState<LayoutView> {
                       Row(
                         children: [
                           Text(
-                            'Bitácoras recientes',
+                            'Controles recientes',
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
                                   color: Colors.white,
@@ -102,7 +105,7 @@ class LayoutViewState extends ConsumerState<LayoutView> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // ..._buildBitacoraItems(context),
+                      ..._buildBitacoraItems(context),
                     ],
                   ),
                 ),
@@ -118,106 +121,100 @@ class LayoutViewState extends ConsumerState<LayoutView> {
   }
 
 
-//   List<Widget> _buildBitacoraItems(BuildContext context) {
-//     final historyLogbooks = ref.watch(getHistoryLogbooks);
-//     final limitedList = historyLogbooks.take(5).toList();
+  List<Widget> _buildBitacoraItems(BuildContext context) {
+    final historyLogbooks = ref.watch(getHistoryTechnical);
+    print('getHistoryTechnical: $historyLogbooks');
+    final limitedList = historyLogbooks.take(5).toList();
 
-//     if (historyLogbooks.isEmpty) {
-//       return [
-//         const Text(
-//           'No hay registros',
-//           style: TextStyle(color: Colors.white54),
-//         )
-//       ];
-//     }
+    if (historyLogbooks.isEmpty) {
+      return [
+        const Text(
+          'No hay registros',
+          style: TextStyle(color: Colors.white54),
+        )
+      ];
+    }
 
-//     return List.generate(limitedList.length, (index) {
-//       final item = limitedList[index];
+    return List.generate(limitedList.length, (index) {
+      final item = limitedList[index];
 
-//       final isEntry = item.containsKey('id_logbook_entry');
-//       final typeText = isEntry ? 'ingreso' : 'salida';
+      final createdBy = item['created_by'] ?? '—';
+      final description = 'Prueba';
 
-//       final createdBy = item['name_user'] ?? '—';
-//       final groupName = item['group_name'] ?? '—';
+      final formattedDate = formatDate(item['created_at']);
 
-//       final description = isEntry
-//           ? 'Bitácora de $typeText en $groupName'
-//           : 'Bitácora de $typeText en $groupName';
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => _openModal(context, BitacoraDetailModal(item: item)),
+          child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Icono check
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 4, 88, 99),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Icon(
+                Icons.edit_note_sharp,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Nombre y descripción
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    createdBy,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color.fromARGB(255, 180, 180, 180),
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    formattedDate,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color.fromARGB(255, 180, 180, 180),
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Chevron
+            const Icon(Icons.chevron_right, color: Colors.white, size: 20),
+          ],
+        ),
+        ),
+      );
+    });
+  }
 
-//       final formattedDate = formatDate(item['created_at']);
-
-//       return Padding(
-//         padding: const EdgeInsets.only(bottom: 12),
-//         child: InkWell(
-//           borderRadius: BorderRadius.circular(8),
-//           onTap: () => _openModal(context, BitacoraDetailModal(item: item)),
-//           child: Row(
-//           crossAxisAlignment: CrossAxisAlignment.center,
-//           children: [
-//             // Icono check
-//             Container(
-//               width: 24,
-//               height: 24,
-//               decoration: BoxDecoration(
-//                 color: const Color.fromARGB(255, 4, 88, 99),
-//                 borderRadius: BorderRadius.circular(4),
-//               ),
-//               child: const Icon(
-//                 Icons.edit_note_sharp,
-//                 color: Colors.white,
-//                 size: 16,
-//               ),
-//             ),
-//             const SizedBox(width: 12),
-//             // Nombre y descripción
-//             Expanded(
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Text(
-//                     createdBy,
-//                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-//                       color: Colors.white,
-//                       fontWeight: FontWeight.w600,
-//                     ),
-//                   ),
-//                   const SizedBox(height: 2),
-//                   Text(
-//                     description,
-//                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//                       color: const Color.fromARGB(255, 180, 180, 180),
-//                       fontWeight: FontWeight.w400,
-//                     ),
-//                   ),
-//                   const SizedBox(height: 2),
-//                   Text(
-//                     formattedDate,
-//                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//                       color: const Color.fromARGB(255, 180, 180, 180),
-//                       fontWeight: FontWeight.w400,
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//             // Chevron
-//             const Icon(Icons.chevron_right, color: Colors.white, size: 20),
-//           ],
-//         ),
-//         ),
-//       );
-//     });
-//   }
-
-//   void _openModal(BuildContext context, Widget childWidget) {
-//     showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       backgroundColor: Colors.transparent,
-//       barrierColor: Colors.black54,
-//       builder: (_) {
-//         return AnimatedModal(child: childWidget);
-//       },
-//     );
-//   }
+  void _openModal(BuildContext context, Widget childWidget) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (_) {
+        return AnimatedModal(child: childWidget);
+      },
+    );
+  }
 }

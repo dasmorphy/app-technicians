@@ -4,7 +4,6 @@ import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:kontrol_app/config/constants/api_constants.dart';
 import 'package:kontrol_app/config/constants/environments.dart';
-import 'package:kontrol_app/config/dio/dio_client.dart';
 import 'package:kontrol_app/presentation/models/technical_request.dart';
 import 'package:uuid/uuid.dart';
 
@@ -13,7 +12,9 @@ import 'package:uuid/uuid.dart';
 
 /// Servicio para manejar las solicitudes de movimiento
 class MovementService {
-  final Dio _dio = DioClient.instance;
+  final Dio dio;
+
+  MovementService(this.dio);
 
   /// Enviar datos del movimiento con fotos al servidor
   Future<Map<String, dynamic>?> submitMovement(TechnicalRequest request) async {
@@ -72,7 +73,7 @@ class MovementService {
       print('📤 Enviando solicitud a: ${Environments.baseUrl}${Environments.postTechnicalControl}');
 
       // Enviar solicitud
-      final response = await _dio.post(
+      final response = await dio.post(
         Environments.postTechnicalControl,
         data: formData,
       );
@@ -99,7 +100,7 @@ class MovementService {
       print('📦 Preparando envío de movimiento (JSON)...');
       print('📤 Enviando solicitud a: ${Environments.baseUrl}${ApiConstants.movementsEndpoint}');
 
-      final response = await _dio.post(
+      final response = await dio.post(
         ApiConstants.movementsEndpoint,
         data: request.toJson(),
       );

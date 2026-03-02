@@ -3,7 +3,7 @@ import 'dart:io';
 class TechnicalRequest {
   final DateTime movementDateTime;
   final List<int> motives;
-  final List<String> projects;
+  final List<int> projects;
   final String? projectOther;
   final int plate;
   final String initialKm;

@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:kontrol_app/config/constants/environments.dart';
-import 'package:kontrol_app/config/dio/dio_client.dart';
 
 class CatalogsService {
-  final Dio _dio = DioClient.instance;
+  final Dio dio;
+
+  CatalogsService(this.dio);
 
   Future<List<Map<String, dynamic>>> getDriversVehicles() async {
     try {
@@ -12,7 +13,7 @@ class CatalogsService {
       );
 
       // Enviar solicitud
-      final response = await _dio.get(Environments.getAllDrivers);
+      final response = await dio.get(Environments.getAllDrivers);
 
       print('✅ Respuesta recibida: ${response.statusCode}');
 
@@ -39,7 +40,7 @@ class CatalogsService {
       );
 
       // Enviar solicitud
-      final response = await _dio.get(Environments.getAllLicenses);
+      final response = await dio.get(Environments.getAllLicenses);
 
       print('✅ Respuesta recibida: ${response.statusCode}');
 
@@ -66,7 +67,7 @@ class CatalogsService {
       );
 
       // Enviar solicitud
-      final response = await _dio.get(Environments.getAllLevelGasoline);
+      final response = await dio.get(Environments.getAllLevelGasoline);
 
       print('✅ Respuesta recibida: ${response.statusCode}');
 
@@ -93,7 +94,7 @@ class CatalogsService {
       );
 
       // Enviar solicitud
-      final response = await _dio.get(Environments.getAllReasons);
+      final response = await dio.get(Environments.getAllReasons);
 
       print('✅ Respuesta recibida: ${response.statusCode}');
 
@@ -120,7 +121,61 @@ class CatalogsService {
       );
 
       // Enviar solicitud
-      final response = await _dio.get(Environments.getAllCopilots);
+      final response = await dio.get(Environments.getAllCopilots);
+
+      print('✅ Respuesta recibida: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return List<Map<String, dynamic>>.from(response.data['data']);
+      } else {
+        throw Exception(
+          'Error en la respuesta del servidor: ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      print('❌ Error de Dio: ${e.message}');
+      rethrow;
+    } catch (e) {
+      print('❌ Error: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getProjects() async {
+    try {
+      print(
+        '📤 Enviando solicitud a: ${Environments.baseUrl}${Environments.getAllProjects}',
+      );
+
+      // Enviar solicitud
+      final response = await dio.get(Environments.getAllProjects);
+
+      print('✅ Respuesta recibida: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return List<Map<String, dynamic>>.from(response.data['data']);
+      } else {
+        throw Exception(
+          'Error en la respuesta del servidor: ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      print('❌ Error de Dio: ${e.message}');
+      rethrow;
+    } catch (e) {
+      print('❌ Error: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllTechnical() async {
+    try {
+      print(
+        '📤 Enviando solicitud a: ${Environments.baseUrl}/rest/technical-control-api/v1.0/get/all-technical-control',
+      );
+
+      // Enviar solicitud
+      final response = await dio.get('/rest/technical-control-api/v1.0/get/all-technical-control');
 
       print('✅ Respuesta recibida: ${response.statusCode}');
 

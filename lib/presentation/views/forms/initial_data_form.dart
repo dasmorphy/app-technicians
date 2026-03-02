@@ -8,7 +8,7 @@ class InitialDataFormWidget extends StatelessWidget {
   final List<String> selectedMotivesNames;
   final List<String> selectedProjectsNames;
   final ValueChanged<List<int>?> onSelectMotives;
-  final List<String> projectOptions;
+  final List<dynamic> projectOptions;
   final List<int> selectedProjects;
   final ValueChanged<List<int>?> onSelectProjects;
   final TextEditingController projectOtherController;
@@ -116,14 +116,18 @@ class InitialDataFormWidget extends StatelessWidget {
           ),
           child: SizedBox(
             width: double.infinity,
-            child: Expanded(
-              child: Text(
-                selectedProjectsNames.isEmpty
-                    ? 'Seleccionar proyecto/cliente'
-                    : selectedProjectsNames.join(', '),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2, // puedes usar 1 si prefieres
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    selectedProjectsNames.isEmpty
+                        ? 'Seleccionar proyecto/cliente'
+                        : selectedProjectsNames.join(', '),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2, // puedes usar 1 si prefieres
+                  ),
+                ),
+              ],
             ),
           ),
         ),
