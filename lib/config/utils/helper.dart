@@ -17,7 +17,6 @@ String formatDateDetails(String dateString) {
   }
 }
 
-String formatDate(String isoDate) {
-  final date = DateTime.parse(isoDate);
+String formatDate(DateTime date) {
   return DateFormat('dd/MM/yyyy HH:mm').format(date);
 }

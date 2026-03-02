@@ -50,7 +50,7 @@ class TechnicalRequest {
       'exit_point': origin,
       'destiny': destination,
       'observations': observations,
-      'initial_images': photos,
+      // 'initial_images': photos,
       'channel': channel,
       'external_transaction_id': externalTransactionId,
     };

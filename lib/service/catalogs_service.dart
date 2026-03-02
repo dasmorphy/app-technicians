@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:kontrol_app/config/constants/environments.dart';
+import 'package:kontrol_app/presentation/models/technical_control.dart';
 
 class CatalogsService {
   final Dio dio;
@@ -168,7 +169,7 @@ class CatalogsService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getAllTechnical() async {
+  Future<List<TechnicalControl>> getAllTechnical() async {
     try {
       print(
         '📤 Enviando solicitud a: ${Environments.baseUrl}/rest/technical-control-api/v1.0/get/all-technical-control',
@@ -180,7 +181,8 @@ class CatalogsService {
       print('✅ Respuesta recibida: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return List<Map<String, dynamic>>.from(response.data['data']);
+        final List techControlsJson = response.data['data'];
+        return techControlsJson.map((json) => TechnicalControl.fromJson(json)).toList();
       } else {
         throw Exception(
           'Error en la respuesta del servidor: ${response.statusCode}',

@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kontrol_app/presentation/models/technical_control.dart';
 import 'package:kontrol_app/presentation/providers/technical-kontrol/technical_repository_provider.dart';
 
 final getHistoryTechnical =
-    StateNotifierProvider<CatalogNotifier<dynamic>, List<dynamic>>((ref) {
+    StateNotifierProvider<CatalogNotifier<TechnicalControl>, List<TechnicalControl>>((ref) {
   final repo = ref.watch(technicalRepositoryProvider);
 
-  return CatalogNotifier<dynamic>(
+  return CatalogNotifier<TechnicalControl>(
     (_) => repo.getAllTechnical(),
   );
 });
@@ -18,9 +19,7 @@ class CatalogNotifier<T> extends StateNotifier<List<T>> {
   final FetchListCallback<T> fetch;
   bool _isLoading = false;
 
-  CatalogNotifier(this.fetch) : super(const []) {
-    load(); // 👈 auto ejecutar al crearse
-  }
+  CatalogNotifier(this.fetch) : super(const []);
 
   Future<void> load({Map<String, dynamic>? filters}) async {
     if (_isLoading || !mounted) return;

@@ -7,7 +7,7 @@ import 'package:kontrol_app/presentation/providers/providers.dart';
 import 'package:kontrol_app/presentation/providers/technical-kontrol/history_technical_provider.dart';
 import 'package:kontrol_app/presentation/widgets/header/home_header.dart';
 import 'package:kontrol_app/presentation/widgets/modals/animated_modal.dart';
-import 'package:kontrol_app/presentation/widgets/modals/bitacora_detail_modal.dart';
+import 'package:kontrol_app/presentation/widgets/modals/tech_detail_modal.dart';
 import 'package:kontrol_app/presentation/widgets/widgets.dart';
 
 class LayoutView extends ConsumerStatefulWidget {
@@ -24,7 +24,7 @@ class LayoutViewState extends ConsumerState<LayoutView> {
   void initState() {
     //En los metodos llmar el metodo read en los providers (flutter favorite)
     super.initState();
-    // ref.read(getHistoryLogbooks.notifier).load();
+    ref.read(getHistoryTechnical.notifier).load();
     // ref.read(getAllCategories.notifier).load();
     // ref.read(getGroupBusinessByIdBusiness.notifier).load();
     // ref.read(getAllUnitiesWeight.notifier).load();
@@ -138,16 +138,16 @@ class LayoutViewState extends ConsumerState<LayoutView> {
     return List.generate(limitedList.length, (index) {
       final item = limitedList[index];
 
-      final createdBy = item['created_by'] ?? '—';
-      final description = 'Prueba';
+      final createdBy = item.nameDriver ?? '—';
+      final description = item.license;
 
-      final formattedDate = formatDate(item['created_at']);
+      final formattedDate = formatDate(item.createdAt);
 
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          onTap: () => _openModal(context, BitacoraDetailModal(item: item)),
+          onTap: () => _openModal(context, TechDetailModal(item: item)),
           child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [

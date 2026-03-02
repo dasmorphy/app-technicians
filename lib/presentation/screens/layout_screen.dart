@@ -5,6 +5,7 @@ import 'package:kontrol_app/config/utils/helper.dart';
 // import 'package:kontrol_app/domain/entities/user_session.dart';
 // import 'package:kontrol_app/presentation/providers/logbook/logbook_provider.dart';
 import 'package:kontrol_app/presentation/providers/providers.dart';
+import 'package:kontrol_app/presentation/providers/technical-kontrol/history_technical_provider.dart';
 import 'package:kontrol_app/presentation/views/form_step.dart';
 import 'package:kontrol_app/presentation/views/form_two_step.dart';
 import 'package:kontrol_app/presentation/views/views.dart';
@@ -88,9 +89,9 @@ class _LayoutScreenState extends ConsumerState<LayoutScreen> {
         onTap: (i) {
           ref.read(homeTabProvider.notifier).state = i;
           
-          // if (i == 0) {
-          //   ref.read(getHistoryLogbooks.notifier).load();
-          // }
+          if (i == 0) {
+            ref.read(getHistoryTechnical.notifier).load();
+          }
         },
       ),
     );

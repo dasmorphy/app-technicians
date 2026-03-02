@@ -1,3 +1,4 @@
+import 'package:kontrol_app/presentation/models/technical_control.dart';
 import 'package:kontrol_app/presentation/models/technical_request.dart';
 import 'package:kontrol_app/service/catalogs_service.dart';
 import 'package:kontrol_app/service/movement_service.dart';
@@ -13,7 +14,7 @@ class TechnicalRepository {
     return service.getProjects();
   }
 
-  Future<List<dynamic>> getAllTechnical() {
+  Future<List<TechnicalControl>> getAllTechnical() {
     return service.getAllTechnical();
   }
 
