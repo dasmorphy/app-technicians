@@ -3,6 +3,7 @@ import 'package:kontrol_app/config/constants/environments.dart';
 import 'package:kontrol_app/config/utils/helper.dart';
 import 'package:kontrol_app/presentation/models/technical_control.dart';
 import 'package:kontrol_app/presentation/models/technical_label.dart';
+import 'package:kontrol_app/presentation/views/form_two_step.dart';
 
 class TechDetailModal extends StatelessWidget {
   final TechnicalControl item;
@@ -207,7 +208,14 @@ class TechDetailModal extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => FormTwoStepView(preloadedData: item),
+                    ),
+                  );
+                },
                 child: const Text(
                   'Continuar',
                   style: TextStyle(color: Colors.white),
