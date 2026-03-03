@@ -26,10 +26,11 @@ class TechDetailModal extends StatelessWidget {
     const hiddenFields = {
       'updated_by',
       'final_gasoline_id',
+      'images', // ocultamos del listado de campos, lo mostramos aparte
       'updated_at',
       'license_id',
       'initial_gasoline_id',
-      'images', // ocultamos del listado de campos, lo mostramos aparte
+      'status_id'
     };
 
     final entries = item
@@ -195,7 +196,25 @@ class TechDetailModal extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 58),
+            const SizedBox(height: 28),
+
+            if (item.nameStatus == 'Pendiente')
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 36, 83, 168),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'Continuar',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+
+              const SizedBox(height: 8),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF444444),
@@ -210,6 +229,9 @@ class TechDetailModal extends StatelessWidget {
                 style: TextStyle(color: Colors.white),
               ),
             ),
+
+            const SizedBox(height: 14),
+
           ],
         ),
       ),

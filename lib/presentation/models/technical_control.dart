@@ -16,6 +16,8 @@ class TechnicalControl {
   dynamic initialGasolineId;
   String initialKm;
   int licenseId;
+  String nameStatus;
+  int statusId;
   List<Reason> reasons;
   DateTime updatedAt;
   dynamic updatedBy;
@@ -28,6 +30,8 @@ class TechnicalControl {
     required this.createdAt,
     required this.createdBy,
     required this.destiny,
+    required this.statusId,
+    required this.nameStatus,
     required this.license,
     required this.exitDate,
     required this.exitPoint,
@@ -65,6 +69,8 @@ class TechnicalControl {
     initialGasolineId: json["initial_gasoline_id"],
     nameGasolineInitial: json["name_gasoline_initial"],
     license: json["license"],
+    statusId: json["status_id"],
+    nameStatus: json["name_status"],
     nameGasolineFinal: json["name_gasoline_final"],
     initialKm: json["initial_km"],
     licenseId: json["license_id"],
@@ -86,6 +92,8 @@ class TechnicalControl {
     "images": images,
     "exit_date": exitDate,
     "exit_point": exitPoint,
+    "status_id": statusId,
+    "status_name": nameStatus,
     "final_gasoline_id": finalGasolineId,
     "name_gasoline_final": nameGasolineFinal,
     "final_km": finalKm,

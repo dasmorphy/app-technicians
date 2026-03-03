@@ -182,6 +182,7 @@ class CatalogsService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final List techControlsJson = response.data['data'];
+        print(techControlsJson);
         return techControlsJson.map((json) => TechnicalControl.fromJson(json)).toList();
       } else {
         throw Exception(

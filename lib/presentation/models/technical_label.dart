@@ -6,6 +6,7 @@ const Map<String, String> technicalLabels = {
   'copilots': 'Copilotos',
   'driver': 'Conductor',
   'plate': 'Placa',
+  'status_name': 'Estado',
   'origin': 'Origen',
   'destination': 'Destino',
   'observations': 'Observaciones',
